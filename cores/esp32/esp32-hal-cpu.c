@@ -39,6 +39,8 @@
 #include "rom/rtc.h"
 #endif
 
+#define MHZ (1000000U)
+
 typedef struct apb_change_cb_s {
         struct apb_change_cb_s * prev;
         struct apb_change_cb_s * next;

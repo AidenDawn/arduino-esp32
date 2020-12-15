@@ -22,7 +22,7 @@ extern "C" {
 #include <dirent.h>
 #undef B110
 #undef B1000000
-#include "esp_littlefs.h"    
+#include "esp_spiffs.h"    
 }
 
 #include "LITTLEFS.h"
@@ -36,21 +36,22 @@ LITTLEFSFS::LITTLEFSFS() : FS(FSImplPtr(new VFSImpl()))
 
 bool LITTLEFSFS::begin(bool formatOnFail, const char * basePath, uint8_t maxOpenFilesUnused)
 {
-    if(esp_littlefs_mounted(LFS_NAME)){
+    if(esp_spiffs_mounted(LFS_NAME)){
         log_w("LITTLEFS Already Mounted!");
         return true;
     }
 
-    esp_vfs_littlefs_conf_t conf = {
+    esp_vfs_spiffs_conf_t conf = {
       .base_path = basePath,
       .partition_label = LFS_NAME,
+      .max_files = maxOpenFilesUnused,
       .format_if_mount_failed = false
     };
 
-    esp_err_t err = esp_vfs_littlefs_register(&conf);
+    esp_err_t err = esp_vfs_spiffs_register(&conf);
     if(err == ESP_FAIL && formatOnFail){
         if(format()){
-            err = esp_vfs_littlefs_register(&conf);
+            err = esp_vfs_spiffs_register(&conf);
         }
     }
     if(err != ESP_OK){
@@ -63,8 +64,8 @@ bool LITTLEFSFS::begin(bool formatOnFail, const char * basePath, uint8_t maxOpen
 
 void LITTLEFSFS::end()
 {
-    if(esp_littlefs_mounted(LFS_NAME)){
-        esp_err_t err = esp_vfs_littlefs_unregister(LFS_NAME);
+    if(esp_spiffs_mounted(LFS_NAME)){
+        esp_err_t err = esp_vfs_spiffs_unregister(LFS_NAME);
         if(err){
             log_e("Unmounting LITTLEFS failed! Error: %d", err);
             return;
@@ -76,7 +77,7 @@ void LITTLEFSFS::end()
 bool LITTLEFSFS::format()
 {
     disableCore0WDT();
-    esp_err_t err = esp_littlefs_format(LFS_NAME);
+    esp_err_t err = esp_spiffs_format(LFS_NAME);
     enableCore0WDT();
     if(err){
         log_e("Formatting LITTLEFS failed! Error: %d", err);
@@ -88,7 +89,7 @@ bool LITTLEFSFS::format()
 size_t LITTLEFSFS::totalBytes()
 {
     size_t total,used;
-    if(esp_littlefs_info(LFS_NAME, &total, &used)){
+    if(esp_spiffs_info(LFS_NAME, &total, &used)){
         return 0;
     }
     return total;
@@ -97,7 +98,7 @@ size_t LITTLEFSFS::totalBytes()
 size_t LITTLEFSFS::usedBytes()
 {
     size_t total,used;
-    if(esp_littlefs_info(LFS_NAME, &total, &used)){
+    if(esp_spiffs_info(LFS_NAME, &total, &used)){
         return 0;
     }
     return used;
